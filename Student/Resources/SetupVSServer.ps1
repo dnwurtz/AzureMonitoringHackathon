@@ -25,16 +25,25 @@ $zipFileeShopTemp = [System.IO.Path]::GetTempPath().ToString() + "eShopOnWeb-mas
 if (Test-Path $zipFileeShopTemp) { Remove-Item $zipFileeShopTemp -Force }
 $zipFileeShop = [System.IO.Path]::GetTempFileName() | Rename-Item -NewName "eShopOnWeb-master.zip" -PassThru
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest -Uri "https://github.com/dotnet-architecture/eShopOnWeb/archive/master.zip" -OutFile $zipFileeShop
+Invoke-WebRequest -Uri "https://codeload.github.com/dotnet-architecture/eShopOnWeb/zip/d7c7540779a9fca62f0b0d7b81f56684b4b976ac" -OutFile $zipFileeShop
 $BackUpPath = $zipFileeShop.FullName
 New-Item -Path c:\eshoponweb -ItemType directory -Force
 $Destination = "C:\eshoponweb"
 Add-Type -assembly "system.io.compression.filesystem" -PassThru
 [io.compression.zipfile]::ExtractToDirectory($BackUpPath, $destination)
+$tmpshopname = (Get-ChildItem -Path $Destination).Name
+
+$tmpshopnewname = $tmpshopname.Substring(0, $tmpshopname.IndexOf('-'))
+
+$tempoldpathname = $Destination + "\" + $tmpshopname
+$tmpfullpath = $Destination + "\" + $tmpshopnewname
+
+
+Rename-Item -NewName $tmpfullpath -Path $tempoldpathname
 
 #Update eShopOnWeb project to use SQL Server
 #modify Startup.cs
-$Startupfile = 'C:\eshoponweb\eShopOnWeb-master\src\Web\Startup.cs'
+$Startupfile = 'C:\eshoponweb\eShopOnWeb\src\Web\Startup.cs'
 $find = '            ConfigureInMemoryDatabases(services);'
 $replace = '            //ConfigureInMemoryDatabases(services);'
 (Get-Content $Startupfile).replace($find, $replace) | Set-Content $Startupfile -Force
@@ -44,7 +53,7 @@ $replace1 = '            ConfigureProductionServices(services);'
 
 #modify appsettings.json
 $SQLusername = "sqladmin"
-$appsettingsfile = 'C:\eshoponweb\eShopOnWeb-master\src\Web\appsettings.json'
+$appsettingsfile = 'C:\eshoponweb\eShopOnWeb\src\Web\appsettings.json'
 $find = '    "CatalogConnection": "Server=(localdb)\\mssqllocaldb;Integrated Security=true;Initial Catalog=Microsoft.eShopOnWeb.CatalogDb;",'
 $replace = '    "CatalogConnection": "Server=' + $SQLServername + ';Integrated Security=false;User ID=' + $SQLusername + ';Password=' + $SQLpassword + ';Initial Catalog=Microsoft.eShopOnWeb.CatalogDb;",'
 (Get-Content $appsettingsfile).replace($find, $replace) | Set-Content $appsettingsfile -Force
@@ -53,7 +62,7 @@ $replace1 = '    "IdentityConnection": "Server=' + $SQLServername + ';Integrated
 (Get-Content $appsettingsfile).replace($find1, $replace1) | Set-Content $appsettingsfile -Force
 
 #add exception to ManageController.cs
-$ManageControllerfile = 'C:\eshoponweb\eShopOnWeb-master\src\Web\Controllers\ManageController.cs'
+$ManageControllerfile = 'C:\eshoponweb\eShopOnWeb\src\Web\Controllers\ManageController.cs'
 $Match = [regex]::Escape("public async Task<IActionResult> ChangePassword()")
 $NewLine = 'throw new ApplicationException($"Oh no!  Error!  Error! Yell at Rob!  He put this here!");'
 $Content = Get-Content $ManageControllerfile -Force
@@ -69,7 +78,7 @@ $NewContent | Out-File $ManageControllerfile -Force
 
 #Configure eShoponWeb application
 # Run dotnet restore with arguments
-$eShopWebDestination = "C:\eshoponweb\eShopOnWeb-master\src\Web"
+$eShopWebDestination = "C:\eshoponweb\eShopOnWeb\src\Web"
 $proc = (Start-Process -FilePath 'C:\Program Files\dotnet\dotnet.exe' -ArgumentList ('restore') -WorkingDirectory $eShopWebDestination -RedirectStandardOutput "c:\windows\temp\dotnetrestoreoutput.txt" -Passthru)
 $proc | Wait-Process
 
@@ -94,6 +103,6 @@ Grant-SmbShareAccess -Name "eShopPub" -AccountName SYSTEM -AccessRight Full -For
 Grant-SmbShareAccess -Name "eShopPub" -AccountName Everyone -AccessRight Full -Force
 
 # Run dotnet publish to to publish files to our share created above
-$eShopWebDestination = "C:\eshoponweb\eShopOnWeb-master\src\Web"
+$eShopWebDestination = "C:\eshoponweb\eShopOnWeb\src\Web"
 $proc = (Start-Process -FilePath 'C:\Program Files\dotnet\dotnet.exe' -ArgumentList ('publish','--output','C:\eShopPub') -WorkingDirectory $eShopWebDestination -Passthru -RedirectStandardOutput "c:\windows\temp\dotnetpuboutput.txt")
 $proc | Wait-Process
