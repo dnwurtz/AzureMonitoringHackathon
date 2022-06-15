@@ -1,5 +1,5 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
         "envPrefixName": {
@@ -727,7 +727,7 @@
                         "forceUpdateTag": "1.0.0",
                         "settings": {
                             "fileUris": [
-                                "https://raw.githubusercontent.com/rkuehfus/AzureMonitoringHackathon/master/Student/Resources/SetupVSServer.ps1"
+                                "https://raw.githubusercontent.com/dnwurtz/AzureMonitoringHackathon/master/Student/Resources/SetupVSServer.ps1"
                             ],
                             "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File SetupVSServer.ps1 ', ' ', variables('sqlSrvDBName'), ' ', parameters('password'))]"
                         }
